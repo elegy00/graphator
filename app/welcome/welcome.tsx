@@ -1,7 +1,39 @@
+import { useQuery } from "@tanstack/react-query";
 import logoDark from "./logo-dark.svg";
 import logoLight from "./logo-light.svg";
+import { useLoaderData } from "react-router";
+
+const loader = async () => {
+  const asd = await fetch(
+    `http://homeassistant.local:8123/api/states/56a5f940b433ece25d998d8b92dcf50c`,
+    {
+      headers: {
+        Authorization: `Bearer TOKKKKEN`,
+      },
+    }
+  );
+  console.log(asd);
+};
 
 export function Welcome() {
+  const data = useLoaderData<typeof loader>();
+  console.log(data);
+  // const { data } = useQuery({
+  //   queryKey: ["welcome"],
+  //   queryFn: async () => {
+  //     const asd = await fetch(
+  //       `http://homeassistant.local:8123/api/states/56a5f940b433ece25d998d8b92dcf50c`,
+  //       {
+  //         headers: {
+  //           Authorization: `Bearer TOKKKKEN`,
+  //         },
+  //       }
+  //     );
+  //     return asd.json();
+  //   },
+  // });
+
+  // console.log(data);
   return (
     <main className="flex items-center justify-center pt-16 pb-4">
       <div className="flex-1 flex flex-col items-center gap-16 min-h-0">
