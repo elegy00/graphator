@@ -3,16 +3,19 @@ import logoDark from "./logo-dark.svg";
 import logoLight from "./logo-light.svg";
 import { useLoaderData } from "react-router";
 
-const loader = async () => {
+export const loader = async () => {
   const asd = await fetch(
-    `http://homeassistant.local:8123/api/states/56a5f940b433ece25d998d8b92dcf50c`,
+    // `http://homeassistant.local:8123/api/states/sensor.lumi_lumi_weather_c3336a05_temperature`,
+    // `http://homeassistant.local:8123/api/config`,
+    `https://google.ch`,
     {
       headers: {
-        Authorization: `Bearer TOKKKKEN`,
+        // Authorization: `Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJlZGMxOTdiM2I5Mzk0YWRlOTI5ZjRhZjNhNzFkODU2NSIsImlhdCI6MTc2MDQ3NTg4NywiZXhwIjoyMDc1ODM1ODg3fQ.WQMCF1R3ld0zMM_15FRxFGd-U17l1OZPl8rdA_vDWko`,
       },
     }
   );
-  console.log(asd);
+  // console.log(await asd.text());
+  return await asd.json();
 };
 
 export function Welcome() {
@@ -36,44 +39,7 @@ export function Welcome() {
   // console.log(data);
   return (
     <main className="flex items-center justify-center pt-16 pb-4">
-      <div className="flex-1 flex flex-col items-center gap-16 min-h-0">
-        <header className="flex flex-col items-center gap-9">
-          <div className="w-[500px] max-w-[100vw] p-4">
-            <img
-              src={logoLight}
-              alt="React Router"
-              className="block w-full dark:hidden"
-            />
-            <img
-              src={logoDark}
-              alt="React Router"
-              className="hidden w-full dark:block"
-            />
-          </div>
-        </header>
-        <div className="max-w-[300px] w-full space-y-6 px-4">
-          <nav className="rounded-3xl border border-gray-200 p-6 dark:border-gray-700 space-y-4">
-            <p className="leading-6 text-gray-700 dark:text-gray-200 text-center">
-              What&apos;s next?
-            </p>
-            <ul>
-              {resources.map(({ href, text, icon }) => (
-                <li key={href}>
-                  <a
-                    className="group flex items-center gap-3 self-stretch p-3 leading-normal text-blue-700 hover:underline dark:text-blue-500"
-                    href={href}
-                    target="_blank"
-                    rel="noreferrer"
-                  >
-                    {icon}
-                    {text}
-                  </a>
-                </li>
-              ))}
-            </ul>
-          </nav>
-        </div>
-      </div>
+      {JSON.stringify(data)}
     </main>
   );
 }
