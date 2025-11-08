@@ -1,5 +1,4 @@
 import { reactRouter } from "@react-router/dev/vite";
-import tailwindcss from "@tailwindcss/vite";
 import { defineConfig, loadEnv } from "vite";
 import tsconfigPaths from "vite-tsconfig-paths";
 
@@ -8,7 +7,10 @@ export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), '');
   
   return {
-    plugins: [tailwindcss(), reactRouter(), tsconfigPaths()],
+    plugins: [reactRouter(), tsconfigPaths()],
+    css: {
+      postcss: './postcss.config.js',
+    },
     define: {
       'process.env.HA_AUTH_TOKEN': JSON.stringify(env.HA_AUTH_TOKEN),
       'process.env.HA_URL': JSON.stringify(env.HA_URL),
