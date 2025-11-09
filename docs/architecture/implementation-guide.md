@@ -187,13 +187,21 @@ This guide breaks down the implementation into discrete, testable steps. Each st
 **Duration**: 1.5 hours  
 **Dependencies**: Step 1, 2
 
+**Important Note**: All API calls must be made server-side through React Router loaders to avoid CORS issues. The HomeAssistantClient is instantiated per-request in loaders, not as a singleton.
+
 **Tasks:**
 1. Create `app/services/sensorDiscovery.ts`:
    ```typescript
    import type { Sensor, HomeAssistantState } from '~/types/sensor';
-   import { haClient } from './api/homeAssistantClient';
+   import type { HomeAssistantClient } from './api/homeAssistantClient';
    
    export class SensorDiscoveryService {
+     private client: HomeAssistantClient;
+     
+     constructor(client: HomeAssistantClient) {
+       this.client = client;
+     }
+     
      private getSensorType(state: HomeAssistantState): Sensor['type'] | null {
        const deviceClass = state.attributes.device_class;
        const unit = state.attributes.unit_of_measurement;
@@ -224,7 +232,7 @@ This guide breaks down the implementation into discrete, testable steps. Each st
      
      async discoverSensors(): Promise<Sensor[]> {
        try {
-         const states = await haClient.getAllStates();
+         const states = await this.client.getAllStates();
          
          const sensors = states
            .filter(state => state.entity_id.startsWith('sensor.'))
@@ -238,23 +246,25 @@ This guide breaks down the implementation into discrete, testable steps. Each st
        }
      }
    }
-   
-   export const sensorDiscovery = new SensorDiscoveryService();
    ```
 
 2. Create test file `app/services/sensorDiscovery.test.ts`:
    ```typescript
-   import { describe, it, expect, vi } from 'vitest';
+   import { describe, it, expect, vi, beforeEach } from 'vitest';
    import { SensorDiscoveryService } from './sensorDiscovery';
+   import { HomeAssistantClient } from './api/homeAssistantClient';
    import type { HomeAssistantState } from '~/types/sensor';
    
-   vi.mock('./api/homeAssistantClient', () => ({
-     haClient: {
-       getAllStates: vi.fn(),
-     },
-   }));
-   
    describe('SensorDiscoveryService', () => {
+     let mockClient: HomeAssistantClient;
+     
+     beforeEach(() => {
+       mockClient = {
+         getAllStates: vi.fn(),
+         getSensorState: vi.fn(),
+       } as any;
+     });
+     
      it('should discover temperature sensors', async () => {
        const mockStates: HomeAssistantState[] = [
          {
@@ -270,10 +280,9 @@ This guide breaks down the implementation into discrete, testable steps. Each st
          },
        ];
        
-       const { haClient } = await import('./api/homeAssistantClient');
-       (haClient.getAllStates as any).mockResolvedValue(mockStates);
+       (mockClient.getAllStates as any).mockResolvedValue(mockStates);
        
-       const service = new SensorDiscoveryService();
+       const service = new SensorDiscoveryService(mockClient);
        const sensors = await service.discoverSensors();
        
        expect(sensors).toHaveLength(1);
@@ -296,10 +305,9 @@ This guide breaks down the implementation into discrete, testable steps. Each st
          },
        ];
        
-       const { haClient } = await import('./api/homeAssistantClient');
-       (haClient.getAllStates as any).mockResolvedValue(mockStates);
+       (mockClient.getAllStates as any).mockResolvedValue(mockStates);
        
-       const service = new SensorDiscoveryService();
+       const service = new SensorDiscoveryService(mockClient);
        const sensors = await service.discoverSensors();
        
        expect(sensors).toHaveLength(0);
@@ -307,50 +315,83 @@ This guide breaks down the implementation into discrete, testable steps. Each st
    });
    ```
 
-3. Create React hook `app/hooks/useSensorDiscovery.ts`:
+3. Update `app/routes/home.tsx` to use server-side loader:
    ```typescript
-   import { useEffect, useState } from 'react';
-   import type { Sensor } from '~/types/sensor';
-   import { sensorDiscovery } from '~/services/sensorDiscovery';
+   import type { Route } from "./+types/home";
+   import { useLoaderData } from "react-router";
+   import { HomeAssistantClient } from "~/services/api/homeAssistantClient";
+   import { SensorDiscoveryService } from "~/services/sensorDiscovery";
+   import { getAuthToken, getHomeAssistantUrl } from "~/config/auth";
    
-   export function useSensorDiscovery() {
-     const [sensors, setSensors] = useState<Sensor[]>([]);
-     const [isLoading, setIsLoading] = useState(true);
-     const [error, setError] = useState<Error | null>(null);
-     
-     const discoverSensors = async () => {
-       setIsLoading(true);
-       setError(null);
+   export async function loader() {
+     try {
+       const client = new HomeAssistantClient(getHomeAssistantUrl(), getAuthToken());
+       const discoveryService = new SensorDiscoveryService(client);
+       const sensors = await discoveryService.discoverSensors();
        
-       try {
-         const discovered = await sensorDiscovery.discoverSensors();
-         setSensors(discovered);
-       } catch (err) {
-         setError(err instanceof Error ? err : new Error('Unknown error'));
-       } finally {
-         setIsLoading(false);
-       }
-     };
+       return { sensors, error: null };
+     } catch (error) {
+       console.error('Failed to discover sensors:', error);
+       return {
+         sensors: [],
+         error: error instanceof Error ? error.message : 'Unknown error',
+       };
+     }
+   }
+   
+   export default function Home() {
+     const { sensors, error } = useLoaderData<typeof loader>();
      
-     useEffect(() => {
-       discoverSensors();
-     }, []);
+     if (error) {
+       return (
+         <main className="flex items-center justify-center min-h-screen">
+           <div className="text-center text-red-600">
+             <p className="font-semibold mb-2">Error loading sensors</p>
+             <p className="text-sm">{error}</p>
+           </div>
+         </main>
+       );
+     }
      
-     return { sensors, isLoading, error, refetch: discoverSensors };
+     return (
+       <main className="container mx-auto px-4 py-8">
+         <header className="mb-8">
+           <h1 className="text-3xl font-bold mb-2">Sensor Monitor</h1>
+           <p className="text-gray-600">
+             {sensors.length} sensor{sensors.length !== 1 ? 's' : ''} discovered
+           </p>
+         </header>
+         
+         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+           {sensors.map(sensor => (
+             <div key={sensor.id} className="border rounded-lg p-4 bg-white shadow">
+               <h3 className="font-semibold text-lg">{sensor.friendlyName}</h3>
+               <div className="text-sm text-gray-600">
+                 <div>Type: {sensor.type}</div>
+                 <div>Unit: {sensor.unit}</div>
+               </div>
+             </div>
+           ))}
+         </div>
+       </main>
+     );
    }
    ```
 
 **Testing:**
 - Run unit tests: `npm test`
-- Create temporary route to display discovered sensors
-- Verify sensors are discovered with correct friendly names
+- Start dev server: `npm run dev`
+- Visit http://localhost:5173/ in browser
+- Verify sensors are discovered and displayed with correct friendly names
+- Check browser console for any errors
 
 **Acceptance Criteria:**
 - [ ] Unit tests pass
-- [ ] Sensors are discovered from API
+- [ ] Sensors are discovered from API via server-side loader (no CORS errors)
 - [ ] Only temperature/humidity sensors are included
 - [ ] Friendly names are correctly extracted
 - [ ] Error handling works
+- [ ] Page loads without client-side CORS issues
 
 ---
 
@@ -648,6 +689,8 @@ This guide breaks down the implementation into discrete, testable steps. Each st
      }, [sensors]);
    }
    ```
+
+**Note**: Data collection will also need to use server-side APIs. In Step 5, we'll refactor this to use React Router's revalidation or a separate API route to avoid CORS issues.
 
 3. Create hook to access stored data `app/hooks/useDataStore.ts`:
    ```typescript
