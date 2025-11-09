@@ -2,7 +2,7 @@ version: '3.8'
 
 services:
   graphator:
-    image: elegy00/graphator:armv7
+    image: elegy/graphator:armv7
     container_name: graphator
     restart: unless-stopped
     ports:
