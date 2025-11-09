@@ -395,12 +395,13 @@ This guide breaks down the implementation into discrete, testable steps. Each st
 
 ---
 
-## Phase 2: Data Collection & Storage
+## Phase 2: Data Collection & Storage ✅ COMPLETED
 
-### Step 4: Create In-Memory Data Store
+### Step 4: Create In-Memory Data Store ✅
 **Goal**: Build time-series data store with automatic retention  
 **Duration**: 2 hours  
 **Dependencies**: Step 1
+**Status**: ✅ Complete
 
 **Tasks:**
 1. Create `app/services/storage/inMemoryStore.ts`:
@@ -568,18 +569,19 @@ This guide breaks down the implementation into discrete, testable steps. Each st
 - Verify memory doesn't grow unbounded
 
 **Acceptance Criteria:**
-- [ ] All unit tests pass
-- [ ] Data can be added and retrieved
-- [ ] Time range filtering works correctly
-- [ ] Old data eviction works (30 days)
-- [ ] Memory limits are enforced
+- [x] All unit tests pass
+- [x] Data can be added and retrieved
+- [x] Time range filtering works correctly
+- [x] Old data eviction works (30 days)
+- [x] Memory limits are enforced
 
 ---
 
-### Step 5: Implement Data Collection Service
+### Step 5: Implement Data Collection Service ✅
 **Goal**: Periodically fetch sensor data and store it  
 **Duration**: 2 hours  
 **Dependencies**: Step 2, 3, 4
+**Status**: ✅ Complete
 
 **Tasks:**
 1. Create `app/services/dataCollection.ts`:
@@ -729,18 +731,19 @@ This guide breaks down the implementation into discrete, testable steps. Each st
 - Verify cleanup on unmount
 
 **Acceptance Criteria:**
-- [ ] Data collection starts automatically
-- [ ] Data is fetched every 1 minute
-- [ ] Data is stored in the data store
-- [ ] Collection stops when component unmounts
-- [ ] Error handling doesn't crash the app
+- [x] Data collection starts automatically
+- [x] Data is fetched every 1 minute
+- [x] Data is stored in the data store
+- [x] Collection stops when component unmounts
+- [x] Error handling doesn't crash the app
 
 ---
 
-### Step 6: Implement Automatic Data Eviction
+### Step 6: Implement Automatic Data Eviction ✅
 **Goal**: Set up background task to evict old data  
 **Duration**: 1 hour  
 **Dependencies**: Step 4
+**Status**: ✅ Complete
 
 **Tasks:**
 1. Create `app/services/dataRetention.ts`:
@@ -810,9 +813,9 @@ This guide breaks down the implementation into discrete, testable steps. Each st
 - Check console logs for eviction activity
 
 **Acceptance Criteria:**
-- [ ] Eviction runs automatically every hour
-- [ ] Old data (>30 days) is removed
-- [ ] Service starts and stops cleanly
+- [x] Eviction runs automatically every hour
+- [x] Old data (>30 days) is removed
+- [x] Service starts and stops cleanly
 
 ---
 
