@@ -37,7 +37,7 @@ jobs:
             type=semver,pattern={{major}}.{{minor}}
             type=raw,value=latest,enable={{is_default_branch}}
 
-      - name: Build and push
+      - name: Build and push multi-arch
         uses: docker/build-push-action@v5
         with:
           context: .
@@ -47,3 +47,13 @@ jobs:
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
+
+      - name: Build and push ARM7 specific tag
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          platforms: linux/arm/v7
+          push: true
+          tags: ${{ secrets.DOCKER_USERNAME }}/graphator:armv7
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
