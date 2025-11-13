@@ -1,9 +1,14 @@
+import { useState } from 'react';
 import type { Route } from "./+types/home";
 import { useLoaderData } from "react-router";
 import { HomeAssistantClient } from "~/services/api/homeAssistantClient";
 import { SensorDiscoveryService } from "~/services/sensorDiscovery";
 import { getAuthToken, getHomeAssistantUrl } from "~/config/auth";
 import type { Sensor } from "~/types/sensor";
+import { SensorList } from '~/components/SensorList';
+import { SensorChart } from '~/components/SensorChart';
+import { getBackgroundCollectionService } from '~/services/backgroundDataCollection.server';
+import { serverDataStore } from '~/services/storage/serverDataStore.server';
 
 export async function loader() {
   try {
@@ -11,12 +16,32 @@ export async function loader() {
     const discoveryService = new SensorDiscoveryService(client);
     const sensors = await discoveryService.discoverSensors();
     
-    return { sensors, error: null };
+    // Start background data collection if not already running
+    const collectionService = getBackgroundCollectionService(client);
+    if (!collectionService.isCollecting()) {
+      await collectionService.start(sensors, 60000); // Collect every 60 seconds
+    } else {
+      // Update sensors in case they changed
+      await collectionService.updateSensors(sensors);
+    }
+
+    // Get latest readings from server store
+    const latestReadings = serverDataStore.getAllLatest();
+    const stats = serverDataStore.getStats();
+    
+    return { 
+      sensors, 
+      error: null,
+      latestReadings,
+      stats,
+    };
   } catch (error) {
     console.error('Failed to discover sensors:', error);
     return {
       sensors: [],
       error: error instanceof Error ? error.message : 'Unknown error',
+      latestReadings: {},
+      stats: { totalPoints: 0, sensors: 0 },
     };
   }
 }
@@ -29,7 +54,11 @@ export function meta({}: Route.MetaArgs) {
 }
 
 export default function Home() {
-  const { sensors, error } = useLoaderData<typeof loader>();
+  const { sensors, error, latestReadings, stats } = useLoaderData<typeof loader>();
+  const [selectedSensor, setSelectedSensor] = useState<Sensor | null>(null);
+
+  // Data collection happens server-side in the loader
+  // No client-side hooks needed!
 
   if (error) {
     return (
@@ -47,25 +76,28 @@ export default function Home() {
       <header className="mb-8">
         <h1 className="text-3xl font-bold mb-2">Sensor Monitor</h1>
         <p className="text-gray-600">
-          {sensors.length} sensor{sensors.length !== 1 ? 's' : ''} discovered
+          {sensors.length} sensor{sensors.length !== 1 ? 's' : ''} active
         </p>
       </header>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {sensors.map(sensor => (
-          <div key={sensor.id} className="border rounded-lg p-4 bg-white shadow">
-            <div className="flex items-center justify-between mb-2">
-              <h3 className="font-semibold text-lg">{sensor.friendlyName}</h3>
-              <span className="w-3 h-3 rounded-full bg-green-500"></span>
-            </div>
-            <div className="space-y-1 text-sm text-gray-600">
-              <div>Type: {sensor.type}</div>
-              <div>Unit: {sensor.unit}</div>
-              <div className="text-xs text-gray-400 mt-2">ID: {sensor.entityId}</div>
-            </div>
+      {selectedSensor ? (
+        <div>
+          <button
+            onClick={() => setSelectedSensor(null)}
+            className="mb-4 px-4 py-2 bg-gray-200 rounded hover:bg-gray-300 transition-colors"
+          >
+            ← Back to sensor list
+          </button>
+          <SensorChart sensor={selectedSensor} />
+        </div>
+      ) : (
+        <>
+          <div className="mb-4 text-sm text-gray-600">
+            📊 {stats.totalPoints} data points collected from {stats.sensors} sensors
           </div>
-        ))}
-      </div>
+          <SensorList sensors={sensors} onSensorSelect={setSelectedSensor} latestReadings={latestReadings} />
+        </>
+      )}
     </main>
   );
 }
