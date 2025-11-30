@@ -1,12 +1,9 @@
-import { useState } from 'react';
 import type { Route } from "./+types/home";
 import { useLoaderData } from "react-router";
 import { HomeAssistantClient } from "~/services/api/homeAssistantClient";
 import { SensorDiscoveryService } from "~/services/sensorDiscovery";
 import { getAuthToken, getHomeAssistantUrl } from "~/config/auth";
-import type { Sensor } from "~/types/sensor";
 import { SensorList } from '~/components/SensorList';
-import { SensorChart } from '~/components/SensorChart';
 import { getBackgroundCollectionService } from '~/services/backgroundDataCollection.server';
 import { serverDataStore } from '~/services/storage/serverDataStore.server';
 
@@ -55,7 +52,6 @@ export function meta({}: Route.MetaArgs) {
 
 export default function Home() {
   const { sensors, error, latestReadings, stats } = useLoaderData<typeof loader>();
-  const [selectedSensor, setSelectedSensor] = useState<Sensor | null>(null);
 
   // Data collection happens server-side in the loader
   // No client-side hooks needed!
@@ -70,7 +66,7 @@ export default function Home() {
       </main>
     );
   }
-  
+
   return (
     <main className="container mx-auto px-4 py-8">
       <header className="mb-8">
@@ -80,24 +76,10 @@ export default function Home() {
         </p>
       </header>
 
-      {selectedSensor ? (
-        <div>
-          <button
-            onClick={() => setSelectedSensor(null)}
-            className="mb-4 px-4 py-2 bg-gray-200 rounded hover:bg-gray-300 transition-colors"
-          >
-            ← Back to sensor list
-          </button>
-          <SensorChart sensor={selectedSensor} />
-        </div>
-      ) : (
-        <>
-          <div className="mb-4 text-sm text-gray-600">
-            📊 {stats.totalPoints} data points collected from {stats.sensors} sensors
-          </div>
-          <SensorList sensors={sensors} onSensorSelect={setSelectedSensor} latestReadings={latestReadings} />
-        </>
-      )}
+      <div className="mb-4 text-sm text-gray-600">
+        📊 {stats.totalPoints} data points collected from {stats.sensors} sensors
+      </div>
+      <SensorList sensors={sensors} latestReadings={latestReadings} />
     </main>
   );
 }

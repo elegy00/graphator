@@ -65,7 +65,6 @@ ENV NODE_OPTIONS="--max-old-space-size=192"
 ### ✅ Compatible Packages
 
 - React, React Router, TanStack Query - Pure JavaScript
-- Recharts - SVG-based, no native dependencies
 - **TailwindCSS v3.x** - Works on ARM
 - PostgreSQL client (pg) - Compiles on ARMv7
 - Vite, TypeScript - Full ARM support

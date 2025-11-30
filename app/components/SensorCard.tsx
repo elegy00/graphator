@@ -4,14 +4,12 @@ interface SensorCardProps {
   sensor: Sensor;
   currentTemp?: number;
   currentHumidity?: number;
-  onSelect: (sensor: Sensor) => void;
 }
 
 export function SensorCard({
   sensor,
   currentTemp,
   currentHumidity,
-  onSelect,
 }: SensorCardProps) {
   const statusColor = {
     online: 'bg-green-500',
@@ -20,9 +18,7 @@ export function SensorCard({
   }[sensor.status];
 
   return (
-    <div
-      className="border rounded-lg p-4 hover:shadow-lg transition-shadow cursor-pointer"
-      onClick={() => onSelect(sensor)}
+    <div className="border rounded-lg p-4 shadow-md"
     >
       <div className="flex items-center justify-between mb-2">
         <h3 className="font-semibold text-lg">{sensor.friendlyName}</h3>

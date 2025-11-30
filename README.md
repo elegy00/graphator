@@ -207,7 +207,7 @@ See [.ai/requirements.md](./.ai/requirements.md) for detailed project requiremen
 
 - [ ] Real-time sensor data fetching with periodic updates
 - [ ] In-memory data storage with 30-day retention
-- [ ] Interactive time-series charts (using Recharts)
+- [x] ~~Interactive time-series charts~~ (removed - simple card display instead)
 - [ ] Time range selection (1 day, 5 days, 30 days)
 - [ ] Responsive design for mobile and desktop
 - [ ] Error handling and retry logic
@@ -231,7 +231,7 @@ See [.ai/requirements.md](./.ai/requirements.md) for detailed project requiremen
 - **Language**: TypeScript
 - **Styling**: TailwindCSS v4
 - **Data Fetching**: TanStack Query (React Query)
-- **Charts**: Recharts (planned)
+- **UI**: Simple card-based display (no charting)
 - **Containerization**: Docker with multi-arch support
 
 ---

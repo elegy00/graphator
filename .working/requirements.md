@@ -10,7 +10,7 @@ Migrate Graphator from in-memory storage to a PostgreSQL-backed 3-container arch
 - Sensor discovery from Home Assistant API (`SensorDiscoveryService`)
 - Background data collection service (`BackgroundDataCollectionService`)
 - In-memory data storage (`serverDataStore.server.ts`)
-- Web UI with React Router v7, SSR, and Recharts
+- Web UI with React Router v7 and SSR
 - Home Assistant API client (`HomeAssistantClient`)
 
 **What Needs to Change**:
@@ -26,14 +26,14 @@ Migrate Graphator from in-memory storage to a PostgreSQL-backed 3-container arch
 
 **Responsibilities**:
 - Serve React Router v7 SSR application
-- Provide API routes for fetching sensor data
-- Query PostgreSQL for sensor metadata and readings
-- Render charts with Recharts
+- Display sensor cards with current temperature/humidity values
+- Query PostgreSQL for sensor metadata and latest readings
 - NO data collection logic (read-only database access)
+- NO charting (simple card-based display)
 
 **Technology**:
 - React Router v7 with SSR enabled
-- TypeScript, TailwindCSS v3, Recharts
+- TypeScript, TailwindCSS v3
 - node-postgres (pg) for database queries
 - Port: 3000
 
@@ -163,8 +163,9 @@ Stores time-series sensor readings.
    - Can be adapted to use database instead of in-memory store
 
 4. **React Components**: `app/components/`
-   - `SensorChart.tsx`, `SensorList.tsx`, `SensorCard.tsx`
-   - May need minor adjustments for data shape from DB
+   - `SensorList.tsx`, `SensorCard.tsx`
+   - Display current sensor values in card format
+   - No charting components needed
 
 ## New Code Requirements
 
@@ -392,9 +393,9 @@ volumes:
 - [ ] Worker collects readings every 60s and writes to `sensor_readings` table
 - [ ] Worker re-discovers sensors every 5 minutes
 - [ ] Worker deletes data older than 30 days every hour
-- [ ] Web server displays all sensors
-- [ ] Web server displays charts with 3-day default view
-- [ ] Charts show real-time updates (data from last collection)
+- [ ] Web server displays all sensors in card grid
+- [ ] Sensor cards show current temperature and humidity values
+- [ ] Sensor cards auto-refresh every 10 seconds
 - [ ] Data persists after `docker compose restart`
 - [ ] All containers respect memory limits (Pi 3 compatible)
 - [ ] Worker logs clearly show collection progress

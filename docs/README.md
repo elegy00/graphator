@@ -77,7 +77,6 @@ Guide to automated Docker image pipeline:
 
 **Architecture & Requirements**
 - [../.ai/requirements.md](../.ai/requirements.md) - Detailed feature requirements
-- [../.ai/charts.md](../.ai/charts.md) - Chart library evaluation (Recharts)
 
 **Docker**
 - [../DOCKER.md](../DOCKER.md) - Comprehensive Docker deployment guide

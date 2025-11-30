@@ -5,11 +5,10 @@ import { useEffect } from 'react';
 
 interface SensorListProps {
   sensors: Sensor[];
-  onSensorSelect: (sensor: Sensor) => void;
   latestReadings: Record<string, SensorReading>;
 }
 
-export function SensorList({ sensors, onSensorSelect, latestReadings }: SensorListProps) {
+export function SensorList({ sensors, latestReadings }: SensorListProps) {
   const revalidator = useRevalidator();
 
   // Revalidate every 10 seconds to get fresh data from server
@@ -39,7 +38,6 @@ export function SensorList({ sensors, onSensorSelect, latestReadings }: SensorLi
             sensor={sensor}
             currentTemp={reading?.temperature}
             currentHumidity={reading?.humidity}
-            onSelect={onSensorSelect}
           />
         );
       })}

@@ -63,7 +63,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-Graphator is a real-time sensor data visualization application that fetches temperature and humidity data from Home Assistant and displays it in interactive time-series charts.
+Graphator is a real-time sensor monitoring application that fetches temperature and humidity data from Home Assistant and displays current sensor values.
 
 **Architecture**: 3-container microservices (web, worker, database)
 **Target Platform**: Raspberry Pi 3/3+ (ARMv7)
@@ -130,9 +130,9 @@ app/
 
 ## Technology Stack
 
-**Web**: React Router v7, TypeScript, TailwindCSS v3, Recharts, TanStack Query
+**Web**: React Router v7, TypeScript, TailwindCSS v3, TanStack Query
 **Worker**: Node.js 20, TypeScript, node-postgres
-**Database**: PostgreSQL 15 + TimescaleDB
+**Database**: PostgreSQL 15 (standard, no TimescaleDB)
 **Testing**: Vitest, @testing-library/react
 
 ## Key Development Patterns
@@ -153,11 +153,10 @@ app/
 3. Handle errors gracefully with user-friendly messages
 4. Test worker separately from web container
 
-### Charts
-- Recharts with `ResponsiveContainer` for responsiveness
-- Default 3-day view, time formatting in `formatXAxis`
-- Disable animations for real-time updates: `isAnimationActive={false}`
-- Use `React.memo` to prevent unnecessary re-renders
+### Data Display
+- Sensor cards show current temperature and humidity values
+- Auto-refresh every 10 seconds via loader revalidation
+- Grid layout responsive to screen size
 
 ## Docker Commands
 
@@ -217,7 +216,6 @@ GitHub Actions automatically builds multi-arch images (amd64, arm64, armv7) on p
 | File | When to Read | Purpose |
 |------|-------------|---------|
 | `.ai/requirements.md` | Before implementing features | Detailed functional requirements and acceptance criteria |
-| `.ai/charts.md` | When working with charts | Why Recharts was chosen, implementation patterns |
 | `README.md` | For project overview | Quick start guide and feature list |
 
 ### 🚀 Deployment & Operations (Read When Deploying or Changing Infrastructure)
