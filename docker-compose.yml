@@ -1,6 +1,24 @@
 version: '3.8'
 
 services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: graphator-db
+    restart: unless-stopped
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_DB=graphator
+      - POSTGRES_USER=graphator
+      - POSTGRES_PASSWORD=changeme
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U graphator"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
   graphator:
     build:
       context: .
@@ -15,6 +33,11 @@ services:
       # Home Assistant configuration
       - HOME_ASSISTANT_URL=${HOME_ASSISTANT_URL:-http://homeassistant.local:8123}
       - HOME_ASSISTANT_TOKEN=${HOME_ASSISTANT_TOKEN}
+      # Database configuration
+      - DATABASE_URL=postgresql://graphator:changeme@postgres:5432/graphator
+    depends_on:
+      postgres:
+        condition: service_healthy
     # Alternative: use env_file instead of environment variables
     # env_file:
     #   - .env
@@ -33,3 +56,6 @@ services:
     #     reservations:
     #       cpus: '0.5'
     #       memory: 256M
+
+volumes:
+  postgres_data:

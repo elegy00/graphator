@@ -26,13 +26,13 @@ export function SensorCard({
       </div>
 
       <div className="space-y-1 text-sm">
-        {currentTemp !== undefined && (
+        {currentTemp !== undefined && currentTemp !== null && (
           <div className="flex justify-between">
             <span className="text-gray-600">Temperature:</span>
             <span className="font-medium">{currentTemp.toFixed(1)} {sensor.unit}</span>
           </div>
         )}
-        {currentHumidity !== undefined && (
+        {currentHumidity !== undefined && currentHumidity !== null && (
           <div className="flex justify-between">
             <span className="text-gray-600">Humidity:</span>
             <span className="font-medium">{currentHumidity.toFixed(1)}%</span>

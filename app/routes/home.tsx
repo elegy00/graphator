@@ -1,39 +1,39 @@
 import type { Route } from "./+types/home";
 import { useLoaderData } from "react-router";
-import { HomeAssistantClient } from "~/services/api/homeAssistantClient";
-import { SensorDiscoveryService } from "~/services/sensorDiscovery";
-import { getAuthToken, getHomeAssistantUrl } from "~/config/auth";
 import { SensorList } from '~/components/SensorList';
-import { getBackgroundCollectionService } from '~/services/backgroundDataCollection.server';
-import { serverDataStore } from '~/services/storage/serverDataStore.server';
+import { sensorRepository, readingRepository } from '~/services/database';
 
 export async function loader() {
   try {
-    const client = new HomeAssistantClient(getHomeAssistantUrl(), getAuthToken());
-    const discoveryService = new SensorDiscoveryService(client);
-    const sensors = await discoveryService.discoverSensors();
+    // Get all sensors from database (populated by worker)
+    const sensors = await sensorRepository.getAllSensors();
     
-    // Start background data collection if not already running
-    const collectionService = getBackgroundCollectionService(client);
-    if (!collectionService.isCollecting()) {
-      await collectionService.start(sensors, 60000); // Collect every 60 seconds
-    } else {
-      // Update sensors in case they changed
-      await collectionService.updateSensors(sensors);
+    // Get latest readings from database (returns Record<string, SensorReading>)
+    const latestReadings = await readingRepository.getAllLatestReadings();
+    
+    // Get total reading count (approximate from all sensors)
+    let totalPoints = 0;
+    for (const sensor of sensors) {
+      const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+      const readings = await readingRepository.getReadingsByTimeRange(
+        sensor.id,
+        thirtyDaysAgo,
+        new Date()
+      );
+      totalPoints += readings.length;
     }
-
-    // Get latest readings from server store
-    const latestReadings = serverDataStore.getAllLatest();
-    const stats = serverDataStore.getStats();
     
     return { 
       sensors, 
       error: null,
       latestReadings,
-      stats,
+      stats: {
+        totalPoints,
+        sensors: sensors.length,
+      },
     };
   } catch (error) {
-    console.error('Failed to discover sensors:', error);
+    console.error('Failed to load sensor data:', error);
     return {
       sensors: [],
       error: error instanceof Error ? error.message : 'Unknown error',
