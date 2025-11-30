@@ -161,15 +161,6 @@ async function collectData(client: HomeAssistantClient): Promise<void> {
 
   const successCount = results.filter(r => r).length;
   console.log(`[Worker] ✓ Collected ${successCount}/${currentSensors.length} readings`);
-
-  // Get total reading count
-  try {
-    const counts = await readingRepository.getReadingCount();
-    const totalReadings = Object.values(counts).reduce((sum, count) => sum + count, 0);
-    console.log(`[Worker] Database: ${totalReadings} total readings across ${Object.keys(counts).length} sensors`);
-  } catch (error) {
-    console.error('[Worker] Failed to get reading count:', error);
-  }
 }
 
 /**
