@@ -1,36 +1,85 @@
 import type { Route } from "./+types/home";
-import { Welcome } from "../welcome/welcome";
 import { useLoaderData } from "react-router";
-import { getAuthToken, getHomeAssistantUrl } from "../config/auth";
+import { SensorList } from '~/components/SensorList';
+import { sensorRepository, readingRepository } from '~/services/database';
 
-export const loader = async () => {
-
-  const asd = await fetch(
-     `${getHomeAssistantUrl()}/api/states/sensor.lumi_lumi_weather_c3336a05_temperature`,
-    {
-      headers: {
-        Authorization: `Bearer ${getAuthToken()}`,
-      },
+export async function loader() {
+  try {
+    // Get all sensors from database (populated by worker)
+    const sensors = await sensorRepository.getAllSensors();
+    
+    // Get latest readings from database (returns Record<string, SensorReading>)
+    const latestReadings = await readingRepository.getAllLatestReadings();
+    
+    // Get total reading count (approximate from all sensors)
+    let totalPoints = 0;
+    for (const sensor of sensors) {
+      const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+      const readings = await readingRepository.getReadingsByTimeRange(
+        sensor.id,
+        thirtyDaysAgo,
+        new Date()
+      );
+      totalPoints += readings.length;
     }
-  );
-
-  return asd.json();
-};
+    
+    return { 
+      sensors, 
+      error: null,
+      latestReadings,
+      stats: {
+        totalPoints,
+        sensors: sensors.length,
+      },
+    };
+  } catch (error) {
+    console.error('Failed to load sensor data:', error);
+    return {
+      sensors: [],
+      error: error instanceof Error ? error.message : 'Unknown error',
+      latestReadings: {},
+      stats: { totalPoints: 0, sensors: 0 },
+    };
+  }
+}
 
 export function meta({}: Route.MetaArgs) {
   return [
-    { title: "New React Router App" },
-    { name: "description", content: "Welcome to React Router!" },
+    { title: "Graphator - Sensor Monitor" },
+    { name: "description", content: "Real-time sensor monitoring" },
   ];
 }
 
 export default function Home() {
-    const data = useLoaderData<typeof loader>();
-  console.log(data);
- 
+  const { sensors, error, latestReadings, stats } = useLoaderData<typeof loader>();
+
+  // Data collection happens server-side in the loader
+  // No client-side hooks needed!
+
+  if (error) {
+    return (
+      <main className="flex items-center justify-center min-h-screen">
+        <div className="text-center text-red-600">
+          <p className="font-semibold mb-2">Error loading sensors</p>
+          <p className="text-sm">{error}</p>
+        </div>
+      </main>
+    );
+  }
+
   return (
-    <main className="flex items-center justify-center pt-16 pb-4">
-      {JSON.stringify(data)}
+    <main className="container mx-auto px-4 py-8">
+      <header className="mb-8">
+        <h1 className="text-3xl font-bold mb-2">Sensor Monitor</h1>
+        <p className="text-gray-600">
+          {sensors.length} sensor{sensors.length !== 1 ? 's' : ''} active
+        </p>
+      </header>
+
+      <div className="mb-4 text-sm text-gray-600">
+        📊 {stats.totalPoints} data points collected from {stats.sensors} sensors
+      </div>
+      <SensorList sensors={sensors} latestReadings={latestReadings} />
     </main>
   );
 }

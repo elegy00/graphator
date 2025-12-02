@@ -1,0 +1,87 @@
+# Docker Compose for Raspberry Pi 3/3+ Deployment
+# Uses pre-built multi-arch images from Docker Hub
+# Platform: linux/arm/v7 (ARMv7)
+
+services:
+  graphator-db:
+    image: postgres:16-alpine
+    platform: linux/arm/v7
+    container_name: graphator-db
+    restart: unless-stopped
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_DB: graphator
+      POSTGRES_USER: graphator
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-changeme}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./postgres.conf:/etc/postgresql/postgresql.conf:ro
+    command: postgres -c config_file=/etc/postgresql/postgresql.conf
+    mem_limit: 384m
+    mem_reservation: 256m
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U graphator"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  graphator-worker:
+    image: elegy00/graphator-worker:armv7
+    platform: linux/arm/v7
+    container_name: graphator-worker
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: postgresql://graphator:${DB_PASSWORD:-changeme}@graphator-db:5432/graphator
+      HOME_ASSISTANT_URL: ${HOME_ASSISTANT_URL}
+      HOME_ASSISTANT_TOKEN: ${HOME_ASSISTANT_TOKEN}
+      COLLECTION_INTERVAL_MS: ${COLLECTION_INTERVAL_MS:-60000}
+      REDISCOVERY_INTERVAL_MS: ${REDISCOVERY_INTERVAL_MS:-300000}
+      CLEANUP_INTERVAL_MS: ${CLEANUP_INTERVAL_MS:-3600000}
+      RETENTION_DAYS: ${RETENTION_DAYS:-30}
+    depends_on:
+      graphator-db:
+        condition: service_healthy
+    mem_limit: 256m
+    mem_reservation: 128m
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  graphator-web:
+    image: elegy00/graphator-web:armv7
+    platform: linux/arm/v7
+    container_name: graphator-web
+    restart: unless-stopped
+    ports:
+      - "${PORT:-3000}:3000"
+    environment:
+      NODE_ENV: production
+      DATABASE_URL: postgresql://graphator:${DB_PASSWORD:-changeme}@graphator-db:5432/graphator
+      PORT: 3000
+    depends_on:
+      graphator-db:
+        condition: service_healthy
+    mem_limit: 256m
+    mem_reservation: 128m
+    healthcheck:
+      test: ["CMD", "node", "-e", "require('http').get('http://localhost:3000', (r) => {process.exit(r.statusCode === 200 ? 0 : 1)})"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+      start_period: 10s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+volumes:
+  postgres_data:
