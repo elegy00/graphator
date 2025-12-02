@@ -1,0 +1,49 @@
+# Worker Container Dockerfile
+# Collects sensor data from Home Assistant and writes to PostgreSQL
+# Supports: linux/amd64, linux/arm64, linux/arm/v7 (Raspberry Pi 3)
+
+# Stage 1: Install dependencies
+FROM node:22-alpine AS dependencies
+WORKDIR /app
+
+# Copy package files
+COPY package.json package-lock.json ./
+
+# Install dependencies (we need tsx for running TypeScript)
+RUN npm ci --prefer-offline --no-audit --maxsockets=1
+
+# Stage 2: Runtime
+FROM node:22-alpine
+
+# Set environment
+ENV NODE_ENV=production
+
+# Create non-root user
+RUN addgroup -g 1001 -S nodejs && \
+    adduser -S nodejs -u 1001
+
+WORKDIR /app
+
+# Copy package files and dependencies
+COPY package.json package-lock.json ./
+COPY --from=dependencies /app/node_modules ./node_modules
+
+# Copy worker source code and database services
+COPY app/worker ./app/worker
+COPY app/services/database ./app/services/database
+COPY app/services/api ./app/services/api
+COPY app/services/sensorDiscovery.ts ./app/services/sensorDiscovery.ts
+COPY app/types ./app/types
+
+# Change ownership
+RUN chown -R nodejs:nodejs /app
+
+# Switch to non-root user
+USER nodejs
+
+# Health check - worker doesn't expose HTTP but we can check process
+HEALTHCHECK --interval=60s --timeout=5s --start-period=10s --retries=3 \
+    CMD pgrep -f "tsx.*worker" || exit 1
+
+# Start worker
+CMD ["npm", "run", "worker"]

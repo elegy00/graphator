@@ -1,16 +1,14 @@
-version: '3.8'
-
 services:
-  postgres:
+  graphator-db:
     image: postgres:16-alpine
     container_name: graphator-db
     restart: unless-stopped
     ports:
       - "5432:5432"
     environment:
-      - POSTGRES_DB=graphator
-      - POSTGRES_USER=graphator
-      - POSTGRES_PASSWORD=changeme
+      POSTGRES_DB: graphator
+      POSTGRES_USER: graphator
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-changeme}
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
@@ -19,24 +17,40 @@ services:
       timeout: 5s
       retries: 5
 
-  graphator:
+  graphator-worker:
+    build:
+      context: .
+      dockerfile: Dockerfile.worker
+    image: graphator-worker:latest
+    container_name: graphator-worker
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: postgresql://graphator:${DB_PASSWORD:-changeme}@graphator-db:5432/graphator
+      HOME_ASSISTANT_URL: ${HOME_ASSISTANT_URL}
+      HOME_ASSISTANT_TOKEN: ${HOME_ASSISTANT_TOKEN}
+      COLLECTION_INTERVAL_MS: ${COLLECTION_INTERVAL_MS:-60000}
+      REDISCOVERY_INTERVAL_MS: ${REDISCOVERY_INTERVAL_MS:-300000}
+      CLEANUP_INTERVAL_MS: ${CLEANUP_INTERVAL_MS:-3600000}
+      RETENTION_DAYS: ${RETENTION_DAYS:-30}
+    depends_on:
+      graphator-db:
+        condition: service_healthy
+
+  graphator-web:
     build:
       context: .
       dockerfile: Dockerfile
-    image: graphator:latest
-    container_name: graphator
+    image: graphator-web:latest
+    container_name: graphator-web
     restart: unless-stopped
     ports:
-      - "3000:3000"
+      - "${PORT:-3000}:3000"
     environment:
-      - NODE_ENV=production
-      # Home Assistant configuration
-      - HOME_ASSISTANT_URL=${HOME_ASSISTANT_URL:-http://homeassistant.local:8123}
-      - HOME_ASSISTANT_TOKEN=${HOME_ASSISTANT_TOKEN}
-      # Database configuration
-      - DATABASE_URL=postgresql://graphator:changeme@postgres:5432/graphator
+      NODE_ENV: production
+      DATABASE_URL: postgresql://graphator:${DB_PASSWORD:-changeme}@graphator-db:5432/graphator
+      PORT: 3000
     depends_on:
-      postgres:
+      graphator-db:
         condition: service_healthy
     # Alternative: use env_file instead of environment variables
     # env_file:

@@ -10,12 +10,12 @@
     "typecheck": "react-router typegen && tsc",
     "test": "vitest",
     "test:ui": "vitest --ui",
-    "docker:build": "docker build -t graphator:latest .",
-    "docker:build:amd64": "docker build --platform linux/amd64 -t graphator:amd64 .",
-    "docker:build:arm64": "docker build --platform linux/arm64 -t graphator:arm64 .",
-    "docker:build:armv7": "docker build --platform linux/arm/v7 -t graphator:armv7 .",
-    "docker:build:multi": "docker buildx build --platform linux/amd64,linux/arm64,linux/arm/v7 -t graphator:latest --load .",
-    "docker:build:multi:push": "docker buildx build --platform linux/amd64,linux/arm64,linux/arm/v7 -t graphator:latest --push ."
+    "docker:build": "docker build -t graphator-web:latest . && docker build -f Dockerfile.worker -t graphator-worker:latest .",
+    "docker:build:web": "docker build -t graphator-web:latest .",
+    "docker:build:worker": "docker build -f Dockerfile.worker -t graphator-worker:latest .",
+    "docker:build:armv7": "docker build --platform linux/arm/v7 -t graphator-web:armv7 . && docker build --platform linux/arm/v7 -f Dockerfile.worker -t graphator-worker:armv7 .",
+    "docker:build:multi": "docker buildx build --platform linux/amd64,linux/arm64,linux/arm/v7 -t elegy00/graphator-web:latest --load . && docker buildx build --platform linux/amd64,linux/arm64,linux/arm/v7 -f Dockerfile.worker -t elegy00/graphator-worker:latest --load .",
+    "docker:build:multi:push": "docker buildx build --platform linux/amd64,linux/arm64,linux/arm/v7 -t elegy00/graphator-web:latest --push . && docker buildx build --platform linux/amd64,linux/arm64,linux/arm/v7 -f Dockerfile.worker -t elegy00/graphator-worker:latest --push ."
   },
   "dependencies": {
     "@react-router/node": "^7.9.2",

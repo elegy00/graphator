@@ -5,7 +5,10 @@ node_modules
 
 # Documentation
 README.md
-.ai/
+.working/
+docs/
+CLAUDE.md
+DOCKER.md
 
 # Git
 .git
@@ -15,6 +18,8 @@ README.md
 .env
 .env.local
 .env.*.local
+.env.worker
+.env.worker.example
 
 # IDE
 .vscode
@@ -42,3 +47,4 @@ yarn-error.log*
 Dockerfile*
 docker-compose*.yml
 .dockerignore
+pi3/

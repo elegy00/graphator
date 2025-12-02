@@ -1,9 +1,9 @@
-# Multi-architecture Dockerfile for Graphator
-# Supports: linux/amd64 (x64) and linux/arm64 (ARM)
-# Build with: docker buildx build --platform linux/amd64,linux/arm64 -t graphator:latest .
+# Web Container Dockerfile
+# Serves React Router SSR application and API endpoints
+# Supports: linux/amd64, linux/arm64, linux/arm/v7 (Raspberry Pi 3)
 
 # Stage 1: Install development dependencies
-FROM node:20-alpine AS development-dependencies-env
+FROM node:22-alpine AS development-dependencies-env
 WORKDIR /app
 
 # Copy package files
@@ -14,7 +14,7 @@ COPY package.json package-lock.json ./
 RUN npm ci --prefer-offline --no-audit --maxsockets=1
 
 # Stage 2: Install production dependencies only
-FROM node:20-alpine AS production-dependencies-env
+FROM node:22-alpine AS production-dependencies-env
 WORKDIR /app
 
 # Copy package files
@@ -24,7 +24,7 @@ COPY package.json package-lock.json ./
 RUN npm ci --omit=dev --prefer-offline --no-audit --maxsockets=1
 
 # Stage 3: Build the application
-FROM node:20-alpine AS build-env
+FROM node:22-alpine AS build-env
 WORKDIR /app
 
 # Copy source code
@@ -37,7 +37,7 @@ COPY --from=development-dependencies-env /app/node_modules ./node_modules
 RUN npm run build
 
 # Stage 4: Production runtime image
-FROM node:20-alpine
+FROM node:22-alpine
 
 # Set environment to production
 ENV NODE_ENV=production

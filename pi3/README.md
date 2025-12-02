@@ -1,6 +1,15 @@
 # Graphator Raspberry Pi 3 Deployment
 
-This folder contains the Docker Compose configuration for running Graphator on a Raspberry Pi 3 (ARMv7).
+This folder contains the Docker Compose configuration for running Graphator on a Raspberry Pi 3/3+ (ARMv7).
+
+## Architecture
+
+Graphator runs as 3 separate containers:
+- **graphator-db**: PostgreSQL 16 database (optimized for Pi 3)
+- **graphator-worker**: Background service collecting sensor data from Home Assistant
+- **graphator-web**: React Router SSR web application serving the UI
+
+All containers use pre-built multi-architecture images from Docker Hub, automatically pulling the correct ARMv7 variant for Raspberry Pi 3.
 
 ## Deployment to Raspberry Pi
 
@@ -40,8 +49,12 @@ cd ~/graphator/pi3
    nano .env
    ```
 
-2. **Update your Home Assistant credentials in `.env`:**
+2. **Update configuration in `.env`:**
    ```bash
+   # Database password
+   DB_PASSWORD=your_secure_password
+
+   # Home Assistant credentials
    HOME_ASSISTANT_URL=http://192.168.1.100:8123
    HOME_ASSISTANT_TOKEN=your_actual_token_here
    ```
@@ -84,9 +97,17 @@ docker compose ps
 
 Edit the `.env` file to configure:
 
+**Required:**
+- `DB_PASSWORD`: PostgreSQL database password
 - `HOME_ASSISTANT_URL`: Your Home Assistant instance URL
-- `HOME_ASSISTANT_TOKEN`: Bearer token from Home Assistant
-- `PORT`: Application port (default: 3000)
+- `HOME_ASSISTANT_TOKEN`: Long-lived access token from Home Assistant
+
+**Optional (with defaults):**
+- `PORT`: Web server port (default: 3000)
+- `COLLECTION_INTERVAL_MS`: Data collection frequency (default: 60000ms = 1 minute)
+- `REDISCOVERY_INTERVAL_MS`: Sensor re-discovery frequency (default: 300000ms = 5 minutes)
+- `CLEANUP_INTERVAL_MS`: Old data cleanup frequency (default: 3600000ms = 1 hour)
+- `RETENTION_DAYS`: Data retention period (default: 30 days)
 
 ### Port Mapping
 
@@ -179,10 +200,23 @@ docker compose up -d
 
 ## System Requirements
 
-- Raspberry Pi 3 (ARMv7) or newer
-- Docker and Docker Compose installed
-- At least 512MB free RAM
-- Network access to Home Assistant instance
+- **Hardware**: Raspberry Pi 3/3+ (ARMv7) or newer
+- **Software**: Docker and Docker Compose
+- **Memory**: At least 600MB free RAM
+  - Database: ~256-384MB
+  - Worker: ~128-256MB
+  - Web: ~128-256MB
+- **Storage**: Fast microSD card (UHS-I U3) or USB SSD recommended
+- **Network**: Access to Home Assistant instance
+
+## Memory Optimization
+
+The docker-compose.yml includes memory limits optimized for Pi 3 (1GB RAM total):
+- Database: 384MB max, 256MB reserved
+- Worker: 256MB max, 128MB reserved
+- Web: 256MB max, 128MB reserved
+
+The included `postgres.conf` is tuned for Pi 3's limited memory.
 
 ## Installing Docker on Raspberry Pi
 
