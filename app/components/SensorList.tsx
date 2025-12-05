@@ -1,14 +1,13 @@
-import type { Sensor, SensorReading } from '~/types/sensor';
+import type { SensorGroup } from '~/utils/sensorGrouping';
 import { SensorCard } from './SensorCard';
 import { useRevalidator } from 'react-router';
 import { useEffect } from 'react';
 
 interface SensorListProps {
-  sensors: Sensor[];
-  latestReadings: Record<string, SensorReading>;
+  sensorGroups: SensorGroup[];
 }
 
-export function SensorList({ sensors, latestReadings }: SensorListProps) {
+export function SensorList({ sensorGroups }: SensorListProps) {
   const revalidator = useRevalidator();
 
   // Revalidate every 10 seconds to get fresh data from server
@@ -20,27 +19,19 @@ export function SensorList({ sensors, latestReadings }: SensorListProps) {
     return () => clearInterval(intervalId);
   }, [revalidator]);
 
-  if (sensors.length === 0) {
+  if (sensorGroups.length === 0) {
     return (
       <div className="text-center py-12">
-        <p className="text-gray-500">No sensors found</p>
+        <p className="text-gray-400">No sensors found</p>
       </div>
     );
   }
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-      {sensors.map(sensor => {
-        const reading = latestReadings[sensor.id];
-        return (
-          <SensorCard
-            key={sensor.id}
-            sensor={sensor}
-            currentTemp={reading?.temperature}
-            currentHumidity={reading?.humidity}
-          />
-        );
-      })}
+      {sensorGroups.map(group => (
+        <SensorCard key={group.location} sensorGroup={group} />
+      ))}
     </div>
   );
 }

@@ -2,15 +2,19 @@ import type { Route } from "./+types/home";
 import { useLoaderData } from "react-router";
 import { SensorList } from '~/components/SensorList';
 import { sensorRepository, readingRepository } from '~/services/database';
+import { groupSensorsByLocation } from '~/utils/sensorGrouping';
 
 export async function loader() {
   try {
     // Get all sensors from database (populated by worker)
     const sensors = await sensorRepository.getAllSensors();
-    
+
     // Get latest readings from database (returns Record<string, SensorReading>)
     const latestReadings = await readingRepository.getAllLatestReadings();
-    
+
+    // Group sensors by location
+    const sensorGroups = groupSensorsByLocation(sensors, latestReadings);
+
     // Get total reading count (approximate from all sensors)
     let totalPoints = 0;
     for (const sensor of sensors) {
@@ -22,23 +26,21 @@ export async function loader() {
       );
       totalPoints += readings.length;
     }
-    
-    return { 
-      sensors, 
+
+    return {
+      sensorGroups,
       error: null,
-      latestReadings,
       stats: {
         totalPoints,
-        sensors: sensors.length,
+        locations: sensorGroups.length,
       },
     };
   } catch (error) {
     console.error('Failed to load sensor data:', error);
     return {
-      sensors: [],
+      sensorGroups: [],
       error: error instanceof Error ? error.message : 'Unknown error',
-      latestReadings: {},
-      stats: { totalPoints: 0, sensors: 0 },
+      stats: { totalPoints: 0, locations: 0 },
     };
   }
 }
@@ -51,15 +53,15 @@ export function meta({}: Route.MetaArgs) {
 }
 
 export default function Home() {
-  const { sensors, error, latestReadings, stats } = useLoaderData<typeof loader>();
+  const { sensorGroups, error, stats } = useLoaderData<typeof loader>();
 
   // Data collection happens server-side in the loader
   // No client-side hooks needed!
 
   if (error) {
     return (
-      <main className="flex items-center justify-center min-h-screen">
-        <div className="text-center text-red-600">
+      <main className="flex items-center justify-center min-h-screen bg-slate-950">
+        <div className="text-center text-red-400">
           <p className="font-semibold mb-2">Error loading sensors</p>
           <p className="text-sm">{error}</p>
         </div>
@@ -68,18 +70,18 @@ export default function Home() {
   }
 
   return (
-    <main className="container mx-auto px-4 py-8">
+    <main className="container mx-auto px-4 py-8 min-h-screen bg-slate-950">
       <header className="mb-8">
-        <h1 className="text-3xl font-bold mb-2">Sensor Monitor</h1>
-        <p className="text-gray-600">
-          {sensors.length} sensor{sensors.length !== 1 ? 's' : ''} active
+        <h1 className="text-3xl font-bold mb-2 text-gray-100">Sensor Monitor</h1>
+        <p className="text-gray-400">
+          {stats.locations} location{stats.locations !== 1 ? 's' : ''} monitored
         </p>
       </header>
 
-      <div className="mb-4 text-sm text-gray-600">
-        📊 {stats.totalPoints} data points collected from {stats.sensors} sensors
+      <div className="mb-4 text-sm text-gray-400">
+        📊 {stats.totalPoints} data points collected from {stats.locations} locations
       </div>
-      <SensorList sensors={sensors} latestReadings={latestReadings} />
+      <SensorList sensorGroups={sensorGroups} />
     </main>
   );
 }
