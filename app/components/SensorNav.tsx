@@ -2,6 +2,7 @@
 // ABOUTME: Displays list of all available sensor locations with active state
 
 import { Link } from 'react-router';
+import { capitalize } from '~/utils/sensorGrouping';
 
 interface SensorNavProps {
   currentLocation: string;
@@ -28,7 +29,7 @@ export function SensorNav({ currentLocation, allLocations }: SensorNavProps) {
                     : 'text-gray-300 hover:bg-slate-800'
                 }`}
               >
-                {location}
+                {capitalize(location)}
               </Link>
             </li>
           );

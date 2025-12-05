@@ -24,11 +24,9 @@ export function SensorHistory({ readings }: SensorHistoryProps) {
   // Check what data types we have
   const hasTemperature = readings.some(r => r.temperature !== undefined && r.temperature !== null);
   const hasHumidity = readings.some(r => r.humidity !== undefined && r.humidity !== null);
-  const hasBattery = readings.some(r => r.battery !== undefined && r.battery !== null);
 
   const temperatureReadings = readings.filter(r => r.temperature !== undefined && r.temperature !== null);
   const humidityReadings = readings.filter(r => r.humidity !== undefined && r.humidity !== null);
-  const batteryReadings = readings.filter(r => r.battery !== undefined && r.battery !== null);
 
   return (
     <div className="space-y-6">
@@ -55,11 +53,6 @@ export function SensorHistory({ readings }: SensorHistoryProps) {
                     Humidity (%)
                   </th>
                 )}
-                {hasBattery && (
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">
-                    Battery (%)
-                  </th>
-                )}
               </tr>
             </thead>
             <tbody className="bg-slate-800 divide-y divide-slate-700">
@@ -79,13 +72,6 @@ export function SensorHistory({ readings }: SensorHistoryProps) {
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-100">
                       {reading.humidity !== undefined && reading.humidity !== null
                         ? reading.humidity.toFixed(1)
-                        : '-'}
-                    </td>
-                  )}
-                  {hasBattery && (
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-100">
-                      {reading.battery !== undefined && reading.battery !== null
-                        ? reading.battery.toFixed(1)
                         : '-'}
                     </td>
                   )}
@@ -148,32 +134,6 @@ export function SensorHistory({ readings }: SensorHistoryProps) {
               <span className="text-gray-400">Avg:</span>
               <span className="ml-2 font-medium text-gray-200">
                 {(humidityReadings.reduce((sum, r) => sum + r.humidity!, 0) / humidityReadings.length).toFixed(1)}%
-              </span>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {batteryReadings.length > 0 && (
-        <div className="border border-slate-600 rounded-lg p-6 bg-slate-800">
-          <h3 className="text-lg font-semibold mb-2 text-gray-100">Battery Statistics</h3>
-          <div className="grid grid-cols-3 gap-4 text-sm">
-            <div>
-              <span className="text-gray-400">Min:</span>
-              <span className="ml-2 font-medium text-gray-200">
-                {Math.min(...batteryReadings.map(r => r.battery!)).toFixed(1)}%
-              </span>
-            </div>
-            <div>
-              <span className="text-gray-400">Max:</span>
-              <span className="ml-2 font-medium text-gray-200">
-                {Math.max(...batteryReadings.map(r => r.battery!)).toFixed(1)}%
-              </span>
-            </div>
-            <div>
-              <span className="text-gray-400">Avg:</span>
-              <span className="ml-2 font-medium text-gray-200">
-                {(batteryReadings.reduce((sum, r) => sum + r.battery!, 0) / batteryReadings.length).toFixed(1)}%
               </span>
             </div>
           </div>

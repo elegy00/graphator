@@ -3,7 +3,7 @@
 
 import { useLoaderData, useNavigate } from "react-router";
 import { sensorRepository, readingRepository } from '~/services/database';
-import { groupSensorsByLocation, getSensorDataType } from '~/utils/sensorGrouping';
+import { groupSensorsByLocation, getSensorDataType, capitalize } from '~/utils/sensorGrouping';
 import { SensorHistory } from '~/components/SensorHistory';
 import { SensorNav } from '~/components/SensorNav';
 
@@ -122,8 +122,8 @@ interface MetaArgs {
 export function meta({ params }: MetaArgs) {
   const location = decodeURIComponent(params.location);
   return [
-    { title: `${location} - Sensor Detail` },
-    { name: "description", content: `Historical data for ${location} sensor` },
+    { title: `${capitalize(location)} - Sensor Detail` },
+    { name: "description", content: `Historical data for ${capitalize(location)} sensor` },
   ];
 }
 
@@ -179,7 +179,7 @@ export default function SensorDetail() {
             >
               ← Back to all sensors
             </button>
-            <h1 className="text-3xl font-bold mb-2 text-gray-100">{location}</h1>
+            <h1 className="text-3xl font-bold mb-2 text-gray-100">{capitalize(location)}</h1>
             <div className="flex gap-4 text-sm">
               {currentGroup.temperature !== undefined && (
                 <div>
